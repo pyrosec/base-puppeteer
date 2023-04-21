@@ -1,0 +1,45 @@
+{
+  "name": "base-puppeteer",
+  "version": "0.1.0",
+  "description": "base puppeteer classes",
+  "main": "lib/index.js",
+  "repository": "https://git.pyrosec.gg/project-ghost/base-puppeteer",
+  "author": "project-ghost",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "build": "tsc",
+    "prettier": "prettier --write ./src.ts/**/*.ts"
+  },
+  "bin": {
+    "base-puppeteer": "./bin/base-puppeteer.js"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^7.6.0",
+    "body-parser": "^1.20.1",
+    "change-case": "^4.1.2",
+    "express": "^4.18.2",
+    "fs-extra": "^10.1.0",
+    "generate-password": "^1.7.0",
+    "mkdirp": "^1.0.4",
+    "morgan": "^1.10.0",
+    "prettier": "^2.8.0",
+    "puppeteer": "^19.2.2",
+    "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-adblocker": "^2.13.5",
+    "puppeteer-extra-plugin-recaptcha": "^3.5.0",
+    "puppeteer-extra-plugin-stealth": "^2.11.1",
+    "querystring": "^0.2.1",
+    "setimmediate": "^1.0.5",
+    "textverified": "git+https://git.pyrosec.gg/project-ghost/textverified",
+    "totp-generator": "^0.0.14",
+    "user-agents": "^1.0.1211",
+    "winston": "^3.8.2",
+    "yargs": "^17.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.9",
+    "nice-repl": "^0.1.2",
+    "typescript": "^4.8.4"
+  }
+}
