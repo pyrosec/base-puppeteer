@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "description": "base puppeteer classes",
   "main": "lib/index.js",
-  "repository": "https://git.pyrosec.gg/project-ghost/base-puppeteer",
-  "author": "project-ghost",
+  "repository": "https://github.com/pyrosec/base-puppeteer",
+  "author": "pyrosec",
   "license": "MIT",
   "private": false,
   "scripts": {
