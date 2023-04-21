@@ -1,6 +1,5 @@
 import qs from "querystring";
 import fs = require("fs-extra");
-import { TextVerifiedClient } from "textverified";
 import totp from "totp-generator";
 import child_process from "child_process";
 import mkdirp from "mkdirp";
