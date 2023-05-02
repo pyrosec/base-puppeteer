@@ -59,7 +59,7 @@ export class BasePuppeteer {
       browser: await puppeteer.launch({
         executablePath: executablePath(),
 	ignoreHTTPSErrors: Boolean(proxyServer),
-        headless: !(headless === false),
+        headless: !(headless === false) && 'new',
         args,
       }),
       logger,
