@@ -6,6 +6,7 @@ import mkdirp from "mkdirp";
 import path from "path";
 import UserAgents from "user-agents";
 import totpGenerator from "totp-generator";
+import urlModule from "url";
 import { generate } from "generate-password";
 import { faker } from "@faker-js/faker";
 const { executablePath } = require("puppeteer");
@@ -27,7 +28,9 @@ const timeout = async (n) =>
 const getOuterHTMLAll = async (page, selectors) => {
   return await page.evaluate((selectors) => {
     return selectors.reduce((r, v) => {
-      const els = [].slice.call(document.querySelectorAll(v)).map((v) => v.outerHTML);
+      const els = [].slice
+        .call(document.querySelectorAll(v))
+        .map((v) => v.outerHTML);
       r[v] = els;
       return r;
     }, {});
@@ -39,8 +42,8 @@ export class BasePuppeteer {
   public _content: string;
   public _browser: ReturnType<typeof puppeteer.launch> | null;
   public logger: any;
-  public _flow: any[] | null
-  static PUPPETEER_CLASS = Symbol.for('@@puppeteer-class');
+  public _flow: any[] | null;
+  static PUPPETEER_CLASS = Symbol.for("@@puppeteer-class");
   static async initialize({
     headless,
     noSandbox,
@@ -49,7 +52,11 @@ export class BasePuppeteer {
     proxyServer,
   }: any = {}) {
     if (!proxyServer) proxyServer = process.env.PUPPETEER_PROXY;
-    const args = proxyServer ? ["--proxy-server=" + proxyServer] : [];
+    const parsedProxyServer = urlModule.parse(proxyServer);
+    const { hostname, port, auth, protocol } = parsedProxyServer;
+    const args = proxyServer
+      ? ["--proxy-server=" + urlModule.format({ hostname, port, protocol })]
+      : [];
     args.push("--disable-web-security");
     if (noSandbox) {
       args.push("--no-sandbox");
@@ -58,8 +65,8 @@ export class BasePuppeteer {
     const instance = new this({
       browser: await puppeteer.launch({
         executablePath: executablePath(),
-	ignoreHTTPSErrors: Boolean(proxyServer),
-        headless: !(headless === false) && 'new',
+        ignoreHTTPSErrors: Boolean(proxyServer),
+        headless: !(headless === false) && "new",
         args,
       }),
       logger,
@@ -74,6 +81,13 @@ export class BasePuppeteer {
         console.error(e);
       }
       await instance._page.setContent(session.content || "");
+    }
+    if (auth) {
+      const [username, password] = auth.split(":");
+      await instance._page.authenticate({
+        username,
+        password,
+      });
     }
     return instance;
   }
@@ -97,7 +111,7 @@ export class BasePuppeteer {
           uri: v,
         })),
         username: username,
-	totp,
+        totp,
         password: password,
       },
     };
@@ -118,7 +132,7 @@ export class BasePuppeteer {
     Object.assign(this, session, props);
   }
   async toObject() {
-    const content = '';
+    const content = "";
     const { cookies } = await this._page
       ._client()
       .send("Network.getAllCookies");
@@ -132,43 +146,52 @@ export class BasePuppeteer {
     return serialized;
   }
   beginFlow() {
-    this.logger.info('recording flow');
+    this.logger.info("recording flow");
     this._flow = [];
-    return { success: true, message: 'recording flow' };
+    return { success: true, message: "recording flow" };
   }
   async serialize() {
     return JSON.stringify(await this.toObject(), null, 2);
   }
-  async evaluate({
-    script,
-    args
-  }) {
-    if (typeof args === 'string') args = (() => { try { return JSON.parse(args); } catch (e) { return args; } })();
-    this._flow.push(['evaluate', {script, args}]);
-    return await this._page.evaluate(async (_script, args) => await (eval('(' +_script + ')(...' + JSON.stringify(args) + ')')), script, args);
-  } 
+  async evaluate({ script, args }) {
+    if (typeof args === "string")
+      args = (() => {
+        try {
+          return JSON.parse(args);
+        } catch (e) {
+          return args;
+        }
+      })();
+    this._flow.push(["evaluate", { script, args }]);
+    return await this._page.evaluate(
+      async (_script, args) =>
+        await eval("(" + _script + ")(..." + JSON.stringify(args) + ")"),
+      script,
+      args
+    );
+  }
   async waitForSelector({ selector }) {
-    this._flow.push(['waitForSelector', {selector}]);
+    this._flow.push(["waitForSelector", { selector }]);
     await this._page.waitForSelector(selector);
     return { success: true };
   }
   async click({ selector, ...options }) {
-    this._flow.push(['click', {selector, ...options}]);
+    this._flow.push(["click", { selector, ...options }]);
     await this._page.click(selector, options);
     return { sucess: true };
   }
-  async timeout({n}) {
-    if (this._flow) this._flow.push(['timeout', {n}]);
+  async timeout({ n }) {
+    if (this._flow) this._flow.push(["timeout", { n }]);
     await timeout(n);
     return { success: true };
   }
   async select({ selector, value }) {
-    this._flow.push(['select', {selector, value}]);
+    this._flow.push(["select", { selector, value }]);
     await this._page.select(selector, value);
     return { success: true };
   }
   async type({ selector, value }) {
-    this._flow.push(['type', { selector, value }]);
+    this._flow.push(["type", { selector, value }]);
     await this._page.type(selector, value);
     return { success: true };
   }
@@ -183,13 +206,18 @@ export class BasePuppeteer {
     return await this._page.content();
   }
   async dumpInputs() {
-    return await getOuterHTMLAll(this._page, ['input', 'a', 'button', 'textarea']);
+    return await getOuterHTMLAll(this._page, [
+      "input",
+      "a",
+      "button",
+      "textarea",
+    ]);
   }
   dumpFlow() {
     return JSON.stringify(this._flow);
   }
   async goto({ url, ...options }) {
-    this._flow.push(['goto', {url, ...options}]);
+    this._flow.push(["goto", { url, ...options }]);
     await this._page.goto(url);
     return { success: true };
   }
