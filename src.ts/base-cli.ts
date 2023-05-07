@@ -220,8 +220,8 @@ export class PuppeteerCLI {
           await this.saveSession(base);
         })();
       });
-      app.listen(listenPort || 8080, (err) =>
-        err ? reject(err) : resolve(app)
+      app.listen(listenPort || 8080, () =>
+        resolve(app)
       );
     });
   }
