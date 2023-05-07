@@ -52,7 +52,7 @@ export class BasePuppeteer {
     proxyServer,
   }: any = {}) {
     if (!proxyServer) proxyServer = process.env.PUPPETEER_PROXY;
-    const parsedProxyServer = urlModule.parse(proxyServer);
+    const parsedProxyServer: any = proxyServer && urlModule.parse(proxyServer) || {};
     const { hostname, port, auth, protocol } = parsedProxyServer;
     const args = proxyServer
       ? ["--proxy-server=" + urlModule.format({ hostname, port, protocol })]
