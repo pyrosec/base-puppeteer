@@ -78,10 +78,10 @@ export class BasePuppeteer {
       proxyServer = proxyToExport(result).replace(/export\s(.*?)_proxy=/, '');
     }
     if (!proxyServer) proxyServer = process.env.PUPPETEER_PROXY;
-    const parsedProxyServer = urlModule.parse(proxyServer);
+    const parsedProxyServer: any = proxyServer && urlModule.parse(proxyServer) || {};
     const { hostname, port, auth, protocol } = parsedProxyServer;
     const args = proxyServer
-      ? ["--proxy-server=" + urlModule.format({ hostname, port, protocol })]
+      ? ["--proxy-server=" + protocol + '//' + hostname + ':' + port ]
       : [];
     args.push("--disable-web-security");
     if (noSandbox) {
