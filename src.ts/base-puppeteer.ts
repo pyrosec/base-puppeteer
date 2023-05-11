@@ -7,8 +7,10 @@ import path from "path";
 import UserAgents from "user-agents";
 import totpGenerator from "totp-generator";
 import urlModule from "url";
+import { Proxy6Client } from "proxy6";
 import { generate } from "generate-password";
 import { faker } from "@faker-js/faker";
+import { proxyToExport } from "proxy6/lib/cli";
 const { executablePath } = require("puppeteer");
 const puppeteer = require("puppeteer-extra");
 const exec = (s) =>
@@ -37,6 +39,17 @@ const getOuterHTMLAll = async (page, selectors) => {
   }, selectors);
 };
 
+const paramsFromProxy6 = (v) => {
+  const split = v.split(':');
+  if (split.length !== 4) return null;
+  const [ service, cycleOrBuy, ipv4OrIpv6, country ] = split;
+  return { service, cycleOrBuy, ipv4OrIpv6, country };
+};
+
+let proxy6: Proxy6Client;
+
+const pickRandom = (list: any) => list[Math.floor(Math.random()*list.length)];
+
 export class BasePuppeteer {
   public _page: any;
   public _content: string;
@@ -49,8 +62,21 @@ export class BasePuppeteer {
     noSandbox,
     logger,
     session,
-    proxyServer,
+    proxyServer
   }: any = {}) {
+    if (process.env.PROXY6_API_KEY) proxy6 = Proxy6Client.fromEnv();
+    const proxyParams = paramsFromProxy6(proxyServer || '');
+    if (proxyParams) {
+      if (!proxy6) throw Error('PROXY6_API_KEY not set');
+      const result = proxyParams.cycleOrBuy === 'random' ? pickRandom(Object.values(((await proxy6.getproxy({} as any)) as any).list).filter((v: any) => v.country === proxyParams.country && (proxyParams.ipv4OrIpv6 === 'ipv4' || v.version === '6'))) : Object.values(((await proxy6.buy({
+        country: proxyParams.country,
+	version: String(proxyParams.ipv4OrIpv6 === 'ipv6' ? 6 : 3),
+	period: proxyParams.ipv4OrIpv6 === 'ipv6' ? 3 : 30,
+	type: 'http',
+	count: 1
+      })) as any).list)[0];
+      proxyServer = proxyToExport(result).replace(/export\s(.*?)_proxy=/, '');
+    }
     if (!proxyServer) proxyServer = process.env.PUPPETEER_PROXY;
     const parsedProxyServer = urlModule.parse(proxyServer);
     const { hostname, port, auth, protocol } = parsedProxyServer;

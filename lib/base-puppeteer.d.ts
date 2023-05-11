@@ -6,7 +6,7 @@ export declare class BasePuppeteer {
     logger: any;
     _flow: any[] | null;
     static PUPPETEER_CLASS: symbol;
-    static initialize({ headless, noSandbox, logger, session, proxyServer, }?: any): Promise<BasePuppeteer>;
+    static initialize({ headless, noSandbox, logger, session, proxyServer }?: any): Promise<BasePuppeteer>;
     saveToBitwarden({ totp, name, uris, username, password }: any): Promise<{
         success: boolean;
     }>;
