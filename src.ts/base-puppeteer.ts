@@ -11,6 +11,7 @@ import { Proxy6Client } from "proxy6";
 import { generate } from "generate-password";
 import { faker } from "@faker-js/faker";
 import { proxyToExport } from "proxy6/lib/cli";
+import net from "net";
 const { executablePath } = require("puppeteer");
 const puppeteer = require("puppeteer-extra");
 const exec = (s) =>
@@ -81,7 +82,7 @@ export class BasePuppeteer {
     const parsedProxyServer: any = proxyServer && urlModule.parse(proxyServer) || {};
     const { hostname, port, auth, protocol } = parsedProxyServer;
     const args = proxyServer
-      ? ["--proxy-server=" + protocol + '//' + hostname + ':' + port ]
+      ? ["--proxy-server=" + protocol + '//' + (net.isIPv6(hostname) ? `[${hostname}]` : hostname) + ':' + port ]
       : [];
     args.push("--disable-web-security");
     if (noSandbox) {
