@@ -69,7 +69,7 @@ export class BasePuppeteer {
     const proxyParams = paramsFromProxy6(proxyServer || '');
     if (proxyParams) {
       if (!proxy6) throw Error('PROXY6_API_KEY not set');
-      const result = proxyParams.cycleOrBuy === 'random' ? pickRandom(Object.values(((await proxy6.getproxy({} as any)) as any).list).filter((v: any) => v.country === proxyParams.country && (proxyParams.ipv4OrIpv6 === 'ipv4' || v.version === '6'))) : Object.values(((await proxy6.buy({
+      const result = proxyParams.cycleOrBuy === 'random' ? pickRandom(Object.values(((await proxy6.getproxy({} as any)) as any).list).filter((v: any) => v.type === 'http' && (v.country === proxyParams.country && (proxyParams.ipv4OrIpv6 === 'ipv4' || v.version === '6')))) : Object.values(((await proxy6.buy({
         country: proxyParams.country,
 	version: String(proxyParams.ipv4OrIpv6 === 'ipv6' ? 6 : 3),
 	period: proxyParams.ipv4OrIpv6 === 'ipv6' ? 3 : 30,
