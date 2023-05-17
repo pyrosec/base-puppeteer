@@ -41,15 +41,15 @@ const getOuterHTMLAll = async (page, selectors) => {
 };
 
 const paramsFromProxy6 = (v) => {
-  const split = v.split(':');
+  const split = v.split(":");
   if (split.length !== 4) return null;
-  const [ service, cycleOrBuy, ipv4OrIpv6, country ] = split;
+  const [service, cycleOrBuy, ipv4OrIpv6, country] = split;
   return { service, cycleOrBuy, ipv4OrIpv6, country };
 };
 
 let proxy6: Proxy6Client;
 
-const pickRandom = (list: any) => list[Math.floor(Math.random()*list.length)];
+const pickRandom = (list: any) => list[Math.floor(Math.random() * list.length)];
 
 export class BasePuppeteer {
   public _page: any;
@@ -58,31 +58,62 @@ export class BasePuppeteer {
   public logger: any;
   public _flow: any[] | null;
   static PUPPETEER_CLASS = Symbol.for("@@puppeteer-class");
-  static async initialize({
-    headless,
-    noSandbox,
-    logger,
-    session,
-    proxyServer
-  }: any = {}) {
+  static async initialize(o: any = {}) {
+    let {
+      headless,
+      noSandbox,
+      logger,
+      session,
+      retryProxy,
+      waitProxy,
+      proxyServer,
+    } = o;
     if (process.env.PROXY6_API_KEY) proxy6 = Proxy6Client.fromEnv();
-    const proxyParams = paramsFromProxy6(proxyServer || '');
+    const proxyParams = paramsFromProxy6(proxyServer || "");
     if (proxyParams) {
-      if (!proxy6) throw Error('PROXY6_API_KEY not set');
-      const result = proxyParams.cycleOrBuy === 'random' ? pickRandom(Object.values(((await proxy6.getproxy({} as any)) as any).list).filter((v: any) => v.type === 'http' && (v.country === proxyParams.country && (proxyParams.ipv4OrIpv6 === 'ipv4' || v.version === '6')))) : Object.values(((await proxy6.buy({
-        country: proxyParams.country,
-	version: String(proxyParams.ipv4OrIpv6 === 'ipv6' ? 6 : 3),
-	period: proxyParams.ipv4OrIpv6 === 'ipv6' ? 3 : 30,
-	type: 'http',
-	count: 1
-      })) as any).list)[0];
-      proxyServer = proxyToExport(result).replace(/export\s(.*?)_proxy=/, '');
+      if (!proxy6) throw Error("PROXY6_API_KEY not set");
+      const result =
+        proxyParams.cycleOrBuy === "random"
+          ? pickRandom(
+              Object.values(
+                ((await proxy6.getproxy({} as any)) as any).list
+              ).filter(
+                (v: any) =>
+                  v.type === "http" &&
+                  v.country === proxyParams.country &&
+                  (proxyParams.ipv4OrIpv6 === "ipv4" || v.version === "6")
+              )
+            )
+          : Object.values(
+              (
+                (await proxy6.buy({
+                  country: proxyParams.country,
+                  version: String(proxyParams.ipv4OrIpv6 === "ipv6" ? 6 : 3),
+                  period: proxyParams.ipv4OrIpv6 === "ipv6" ? 3 : 30,
+                  type: "http",
+                  count: 1,
+                })) as any
+              ).list
+            )[0];
+      proxyServer = proxyToExport(result).replace(/export\s(.*?)_proxy=/, "");
+      if (waitProxy) {
+        if (isNaN(waitProxy)) throw Error("--wait-proxy must be an integer");
+        await timeout(Number(waitProxy));
+      }
     }
     if (!proxyServer) proxyServer = process.env.PUPPETEER_PROXY;
-    const parsedProxyServer: any = proxyServer && urlModule.parse(proxyServer) || {};
+    const parsedProxyServer: any =
+      (proxyServer && urlModule.parse(proxyServer)) || {};
     const { hostname, port, auth, protocol } = parsedProxyServer;
     const args = proxyServer
-      ? ["--proxy-server=" + protocol + '//' + (net.isIPv6(hostname) ? `[${hostname}]` : hostname) + ':' + port ]
+      ? [
+          "--proxy-server=" +
+            protocol +
+            "//" +
+            (net.isIPv6(hostname) ? `[${hostname}]` : hostname) +
+            ":" +
+            port,
+        ]
       : [];
     args.push("--disable-web-security");
     if (noSandbox) {
@@ -115,6 +146,22 @@ export class BasePuppeteer {
         username,
         password,
       });
+    }
+    if (proxyServer && retryProxy) {
+      try {
+        const { ip } = await instance._page.evaluate(async () => {
+          const response = await (
+            await window.fetch("https://api64.ipify.org?format=json", {
+              method: "GET",
+            })
+          ).json();
+          return response;
+        });
+        instance.logger.info("ip|" + ip);
+      } catch (e) {
+        instance.logger.error(e);
+        return await this.initialize(o);
+      }
     }
     return instance;
   }
