@@ -42,6 +42,7 @@ const getOuterHTMLAll = async (page, selectors) => {
 
 const paramsFromProxy6 = (v) => {
   const split = v.split(":");
+  if (split[0] === 'proxy6') return null;
   if (split.length !== 4) return null;
   const [service, cycleOrBuy, ipv4OrIpv6, country] = split;
   return { service, cycleOrBuy, ipv4OrIpv6, country };
