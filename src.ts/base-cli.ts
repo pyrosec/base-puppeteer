@@ -80,7 +80,7 @@ export class PuppeteerCLI {
           headless: headless !== "false",
           session,
 	  ...opts,
-          noSandbox: sandbox === "false",
+          sandbox: ![false, undefined, null, "false"].includes(sandbox)
         } as any);
   }
 
@@ -114,7 +114,6 @@ export class PuppeteerCLI {
     this.logger.info("done!");
     return { success: true };
   }
-
   async getSessionName() {
     await mkdirp(path.join(process.env.HOME, '.' + this.programName));
     try {

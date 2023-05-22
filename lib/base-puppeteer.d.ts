@@ -7,6 +7,7 @@ export declare class BasePuppeteer {
     _flow: any[] | null;
     static PUPPETEER_CLASS: symbol;
     static initialize(o?: any): any;
+    waitForSelectorFromList({ selectors }?: any): Promise<any>;
     saveToBitwarden({ totp, name, uris, username, password }: any): Promise<{
         success: boolean;
     }>;

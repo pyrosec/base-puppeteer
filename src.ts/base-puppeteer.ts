@@ -42,7 +42,7 @@ const getOuterHTMLAll = async (page, selectors) => {
 
 const paramsFromProxy6 = (v) => {
   const split = v.split(":");
-  if (split[0] === 'proxy6') return null;
+  if (split[0] !== 'proxy6') return null;
   if (split.length !== 4) return null;
   const [service, cycleOrBuy, ipv4OrIpv6, country] = split;
   return { service, cycleOrBuy, ipv4OrIpv6, country };
@@ -62,7 +62,7 @@ export class BasePuppeteer {
   static async initialize(o: any = {}) {
     let {
       headless,
-      noSandbox,
+      sandbox,
       logger,
       session,
       retryProxy,
@@ -117,7 +117,7 @@ export class BasePuppeteer {
         ]
       : [];
     args.push("--disable-web-security");
-    if (noSandbox) {
+    if (!sandbox) {
       args.push("--no-sandbox");
       args.push("--disable-setuid-sandbox");
     }
@@ -165,6 +165,15 @@ export class BasePuppeteer {
       }
     }
     return instance;
+  }
+  async waitForSelectorFromList({ selectors }: any = { selectors: [] }) {
+    return await this._page.evaluate(async (selectors) => {
+      while (true) {
+        const found = selectors.find((v) => document.querySelector(v));
+	if (found) return found;
+	else await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    });
   }
   async saveToBitwarden({ totp, name, uris, username, password }: any) {
     const entry: any = {
