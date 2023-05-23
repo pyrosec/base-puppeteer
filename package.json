@@ -25,6 +25,7 @@
     "mkdirp": "^1.0.4",
     "morgan": "^1.10.0",
     "prettier": "^2.8.0",
+    "proxies-fo": "https://github.com/pyrosec/proxies-fo",
     "proxy6": "https://github.com/pyrosec/proxy6",
     "puppeteer": "^19.10.1",
     "puppeteer-extra": "^3.3.6",

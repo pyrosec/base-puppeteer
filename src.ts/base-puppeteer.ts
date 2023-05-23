@@ -12,6 +12,9 @@ import { generate } from "generate-password";
 import { faker } from "@faker-js/faker";
 import { proxyToExport } from "proxy6/lib/cli";
 import net from "net";
+import crypto from "crypto";
+import lodash from "lodash";
+import { ProxiesFoClient } from "proxies-fo";
 const { executablePath } = require("puppeteer");
 const puppeteer = require("puppeteer-extra");
 const exec = (s) =>
@@ -24,6 +27,8 @@ const stealthPlugin = StealthPlugin();
 stealthPlugin.enabledEvasions.delete("iframe.contentWindow");
 stealthPlugin.enabledEvasions.delete("navigator.plugins");
 puppeteer.use(stealthPlugin);
+
+const proxiesFo = new ProxiesFoClient({} as any);
 
 const timeout = async (n) =>
   await new Promise((resolve) => setTimeout(resolve, n));
@@ -47,6 +52,37 @@ const paramsFromProxy6 = (v) => {
   const [service, cycleOrBuy, ipv4OrIpv6, country] = split;
   return { service, cycleOrBuy, ipv4OrIpv6, country };
 };
+
+const proxiesFoItemToProxyString = (item: any) => {
+  return urlModule.format({
+    protocol: 'http:',
+    hostname: item.serverIP,
+    port: item.serverPort,
+    auth: item.authUser + ':' + item.authPass
+  });
+};
+const getProxiesFoProxy = async (buy: boolean) => {
+  const { payload: subUsers } = await proxiesFo.getAllSubUsers();
+  let id = (subUsers.find((v) => email.match(/^[a-f0-9]+@guerrillamailblock.com/)) || {})._id || null;
+  if (!id) {
+    const username = crypto.randomBytes(6).toString('hex');
+    const email = username + '@guerrillamailblock.com';
+    await proxiesFo.createSubUser({ username, email });
+    return await getProxiesFoProxy(buy);
+  }
+  if (buy) {
+    const { payload: { plans } } = await proxiesFo.getAllPlans();
+    const { _id } = lodash.minBy(plans.filter((v) => v.provider === 'Residential'), (v) => Number(v.price));
+    const { payload: plan } = await proxiesFo.addPlanToSubUser({ accountId: id, planId: _id });
+    const { payload: { activeSubscriptions } } = await proxiesFo.getSingleSubUser({ accountId: id });
+    const found = activeSubscriptions.find((v) => v._id === plan._id);
+    return proxiesFoItemToProxyString(found);
+
+  } else {
+    const { payload: { activeSubscriptions } } = await proxiesFo.getSingleSubUser({ accountId: id });
+    return proxiesFoItemToProxyString(activeSubscriptions[Math.floor(Math.random()*activeSubscriptions.length)]);
+  }
+  }
 
 let proxy6: Proxy6Client;
 
