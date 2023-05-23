@@ -47,52 +47,69 @@ const getOuterHTMLAll = async (page, selectors) => {
 
 const proxy6ParamsFromProxyServer = (v) => {
   const split = v.split(":");
-  if (split[0] !== 'proxy6') return null;
+  if (split[0] !== "proxy6") return null;
   if (split.length !== 4) return null;
   const [service, cycleOrBuy, ipv4OrIpv6, country] = split;
   return { service, cycleOrBuy, ipv4OrIpv6, country };
 };
 
 const proxiesFoParamsFromProxyServer = (v) => {
-  const split = v.split(':');
-  if (split[0] !== 'proxies-fo') return null;
+  const split = v.split(":");
+  if (split[0] !== "proxies-fo") return null;
   if (split.length !== 2) return null;
-  const [ service, cycleOrBuy ] = split;
+  const [service, cycleOrBuy] = split;
   return { service, cycleOrBuy };
 };
 
 const proxiesFoItemToProxyString = (item: any) => {
-  console.log(item);
   return urlModule.format({
-    protocol: 'http:',
+    protocol: "http:",
     hostname: item.serverIP,
     port: item.serverPort,
-    auth: item.authUser + ':' + item.authPass
+    auth: item.authUser + ":" + item.authPass,
   });
 };
 const getProxiesFoProxy = async (buy: boolean) => {
   const { payload: subUsers } = await proxiesFo.getAllSubUsers();
-  let id = (subUsers.find((v) => v.email.match(/^[a-f0-9]+@guerrillamailblock.com/)) || {})._id || null;
+  let id =
+    (
+      subUsers.find((v) =>
+        v.email.match(/^[a-f0-9]+@guerrillamailblock.com/)
+      ) || {}
+    )._id || null;
   if (!id) {
-    const username = crypto.randomBytes(6).toString('hex');
-    const email = username + '@guerrillamailblock.com';
+    const username = crypto.randomBytes(6).toString("hex");
+    const email = username + "@guerrillamailblock.com";
     await proxiesFo.createSubUser({ username, email });
     return await getProxiesFoProxy(buy);
   }
   if (buy) {
-    const { payload: { plans } } = await proxiesFo.getAllPlans();
-    const { _id } = lodash.minBy(plans.filter((v) => v.provider === 'Residential'), (v) => Number(v.price));
-    const { payload: { subscription } } = await proxiesFo.addPlanToSubUser({ accountId: id, planId: _id });
-    const { payload: { activeSubscriptions } } = await proxiesFo.getSingleSubUser({ accountId: id });
+    const {
+      payload: { plans },
+    } = await proxiesFo.getAllPlans();
+    const { _id } = lodash.minBy(
+      plans.filter((v) => v.provider === "Residential"),
+      (v) => Number(v.price)
+    );
+    const {
+      payload: { subscription },
+    } = await proxiesFo.addPlanToSubUser({ accountId: id, planId: _id });
+    const {
+      payload: { activeSubscriptions },
+    } = await proxiesFo.getSingleSubUser({ accountId: id });
     const found = activeSubscriptions.find((v) => v._id === subscription._id);
     return proxiesFoItemToProxyString(found);
-
   } else {
-    const { payload: { activeSubscriptions } } = await proxiesFo.getSingleSubUser({ accountId: id });
-    console.log('activeSubscriptions', activeSubscriptions);
-    return proxiesFoItemToProxyString(activeSubscriptions[Math.floor(Math.random()*activeSubscriptions.length)]);
+    const {
+      payload: { activeSubscriptions },
+    } = await proxiesFo.getSingleSubUser({ accountId: id });
+    return proxiesFoItemToProxyString(
+      activeSubscriptions[
+        Math.floor(Math.random() * activeSubscriptions.length)
+      ]
+    );
   }
-  }
+};
 
 let proxy6: Proxy6Client;
 
@@ -150,9 +167,10 @@ export class BasePuppeteer {
       }
     }
     if (proxiesFoParams) {
-      proxyServer = await getProxiesFoProxy(proxiesFoParams.cycleOrBuy === 'buy');
+      proxyServer = await getProxiesFoProxy(
+        proxiesFoParams.cycleOrBuy === "buy"
+      );
     }
-    console.log(proxyServer);
     if (!proxyServer) proxyServer = process.env.PUPPETEER_PROXY;
     const parsedProxyServer: any =
       (proxyServer && urlModule.parse(proxyServer)) || {};
@@ -221,10 +239,24 @@ export class BasePuppeteer {
     return await this._page.evaluate(async (selectors) => {
       while (true) {
         const found = selectors.find((v) => document.querySelector(v));
-	if (found) return found;
-	else await new Promise((resolve) => setTimeout(resolve, 250));
+        if (found) return found;
+        else await new Promise((resolve) => setTimeout(resolve, 250));
       }
     });
+  }
+  async scrollIntoView({ selector }) {
+    const page = this._page;
+    await page.evaluate(() => document.querySelector(selector).scrollIntoView());
+  }
+  async stealthType({ selector, value }) {
+    const page = this._page;
+    const chars = [].slice.call(value);
+    await this.scrollIntoView({ selector });
+    await this.timeout({ n: 250 + Math.floor(Math.random()*500) });
+    for (const char of chars) {
+      await page.type(selector, char);
+      await this.timeout({ n: 100 + Math.floor(Math.random()*200) });
+    }
   }
   async saveToBitwarden({ totp, name, uris, username, password }: any) {
     const entry: any = {
@@ -311,6 +343,7 @@ export class BasePuppeteer {
     return { success: true };
   }
   async click({ selector, ...options }) {
+    await this.scrollIntoView({ selector });
     this._flow.push(["click", { selector, ...options }]);
     await this._page.click(selector, options);
     return { sucess: true };
@@ -322,12 +355,14 @@ export class BasePuppeteer {
   }
   async select({ selector, value }) {
     this._flow.push(["select", { selector, value }]);
+    await this.scrollIntoView({ selector });
     await this._page.select(selector, value);
     return { success: true };
   }
-  async type({ selector, value }) {
+  async type({ stealth, selector, value }) {
     this._flow.push(["type", { selector, value }]);
-    await this._page.type(selector, value);
+    if (stealth) await this.stealthType({ selector, value });
+    else await this._page.type(selector, value);
     return { success: true };
   }
   async runFlow(flow: any[]) {

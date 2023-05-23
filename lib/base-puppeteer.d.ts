@@ -8,6 +8,13 @@ export declare class BasePuppeteer {
     static PUPPETEER_CLASS: symbol;
     static initialize(o?: any): any;
     waitForSelectorFromList({ selectors }?: any): Promise<any>;
+    scrollIntoView({ selector }: {
+        selector: any;
+    }): Promise<void>;
+    stealthType({ selector, value }: {
+        selector: any;
+        value: any;
+    }): Promise<void>;
     saveToBitwarden({ totp, name, uris, username, password }: any): Promise<{
         success: boolean;
     }>;
@@ -52,7 +59,8 @@ export declare class BasePuppeteer {
     }): Promise<{
         success: boolean;
     }>;
-    type({ selector, value }: {
+    type({ stealth, selector, value }: {
+        stealth: any;
         selector: any;
         value: any;
     }): Promise<{
