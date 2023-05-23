@@ -45,7 +45,7 @@ const getOuterHTMLAll = async (page, selectors) => {
   }, selectors);
 };
 
-const paramsFromProxy6 = (v) => {
+const proxy6ParamsFromProxyServer = (v) => {
   const split = v.split(":");
   if (split[0] !== 'proxy6') return null;
   if (split.length !== 4) return null;
@@ -53,7 +53,16 @@ const paramsFromProxy6 = (v) => {
   return { service, cycleOrBuy, ipv4OrIpv6, country };
 };
 
+const proxiesFoParamsFromProxyServer = (v) => {
+  const split = v.split(':');
+  if (split[0] !== 'proxies-fo') return null;
+  if (split.length !== 2) return null;
+  const [ service, cycleOrBuy ] = split;
+  return { service, cycleOrBuy };
+};
+
 const proxiesFoItemToProxyString = (item: any) => {
+  console.log(item);
   return urlModule.format({
     protocol: 'http:',
     hostname: item.serverIP,
@@ -73,13 +82,14 @@ const getProxiesFoProxy = async (buy: boolean) => {
   if (buy) {
     const { payload: { plans } } = await proxiesFo.getAllPlans();
     const { _id } = lodash.minBy(plans.filter((v) => v.provider === 'Residential'), (v) => Number(v.price));
-    const { payload: plan } = await proxiesFo.addPlanToSubUser({ accountId: id, planId: _id });
+    const { payload: { subscription } } = await proxiesFo.addPlanToSubUser({ accountId: id, planId: _id });
     const { payload: { activeSubscriptions } } = await proxiesFo.getSingleSubUser({ accountId: id });
-    const found = activeSubscriptions.find((v) => v._id === plan._id);
+    const found = activeSubscriptions.find((v) => v._id === subscription._id);
     return proxiesFoItemToProxyString(found);
 
   } else {
     const { payload: { activeSubscriptions } } = await proxiesFo.getSingleSubUser({ accountId: id });
+    console.log('activeSubscriptions', activeSubscriptions);
     return proxiesFoItemToProxyString(activeSubscriptions[Math.floor(Math.random()*activeSubscriptions.length)]);
   }
   }
@@ -106,7 +116,8 @@ export class BasePuppeteer {
       proxyServer,
     } = o;
     if (process.env.PROXY6_API_KEY) proxy6 = Proxy6Client.fromEnv();
-    const proxyParams = paramsFromProxy6(proxyServer || "");
+    const proxyParams = proxy6ParamsFromProxyServer(proxyServer || "");
+    const proxiesFoParams = proxiesFoParamsFromProxyServer(proxyServer || "");
     if (proxyParams) {
       if (!proxy6) throw Error("PROXY6_API_KEY not set");
       const result =
@@ -138,6 +149,10 @@ export class BasePuppeteer {
         await timeout(Number(waitProxy));
       }
     }
+    if (proxiesFoParams) {
+      proxyServer = await getProxiesFoProxy(proxiesFoParams.cycleOrBuy === 'buy');
+    }
+    console.log(proxyServer);
     if (!proxyServer) proxyServer = process.env.PUPPETEER_PROXY;
     const parsedProxyServer: any =
       (proxyServer && urlModule.parse(proxyServer)) || {};
