@@ -63,7 +63,7 @@ const proxiesFoItemToProxyString = (item: any) => {
 };
 const getProxiesFoProxy = async (buy: boolean) => {
   const { payload: subUsers } = await proxiesFo.getAllSubUsers();
-  let id = (subUsers.find((v) => email.match(/^[a-f0-9]+@guerrillamailblock.com/)) || {})._id || null;
+  let id = (subUsers.find((v) => v.email.match(/^[a-f0-9]+@guerrillamailblock.com/)) || {})._id || null;
   if (!id) {
     const username = crypto.randomBytes(6).toString('hex');
     const email = username + '@guerrillamailblock.com';
