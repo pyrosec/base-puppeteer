@@ -246,7 +246,7 @@ export class BasePuppeteer {
   }
   async scrollIntoView({ selector }) {
     const page = this._page;
-    await page.evaluate(() => document.querySelector(selector).scrollIntoView());
+    await page.evaluate((selector) => document.querySelector(selector).scrollIntoView(), selector);
   }
   async stealthType({ selector, value }) {
     const page = this._page;
