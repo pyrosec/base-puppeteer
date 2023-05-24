@@ -242,7 +242,7 @@ export class BasePuppeteer {
         if (found) return found;
         else await new Promise((resolve) => setTimeout(resolve, 250));
       }
-    });
+    }, selectors);
   }
   async scrollIntoView({ selector }) {
     const page = this._page;
