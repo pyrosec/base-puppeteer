@@ -146,7 +146,7 @@ export class BasePuppeteer {
                 (v: any) =>
                   v.type === "http" &&
                   v.country === proxyParams.country &&
-                  (proxyParams.ipv4OrIpv6 === "ipv4" && v.version == 4) || (v.version == 4 && proxyParams.ipv4OrIpv6 === "ipv6")
+                  (proxyParams.ipv4OrIpv6 === "ipv4" && (v.version == 4 || v.version == 3)) || (v.version == 6 && proxyParams.ipv4OrIpv6 === "ipv6")
               )
             )
           : Object.values(
