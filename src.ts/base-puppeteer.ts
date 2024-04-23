@@ -175,7 +175,7 @@ export class BasePuppeteer {
     const parsedProxyServer: any =
       (proxyServer && urlModule.parse(proxyServer)) || {};
     const { hostname, port, auth, protocol } = parsedProxyServer;
-    const args = proxyServer
+    const args = ((v) => ((console.log(v)), v))(proxyServer
       ? [
           "--proxy-server=" +
             protocol +
@@ -184,7 +184,7 @@ export class BasePuppeteer {
             ":" +
             port,
         ]
-      : [];
+      : []);
     args.push("--disable-web-security");
     if (!sandbox) {
       args.push("--no-sandbox");

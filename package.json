@@ -27,7 +27,7 @@
     "prettier": "^2.8.0",
     "proxies-fo": "https://github.com/pyrosec/proxies-fo",
     "proxy6": "https://github.com/pyrosec/proxy6",
-    "puppeteer": "^21.6.0",
+    "puppeteer": "^22.7.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-adblocker": "^2.13.6",
     "puppeteer-extra-plugin-recaptcha": "^3.6.8",
